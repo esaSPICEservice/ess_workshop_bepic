@@ -1,0 +1,630 @@
+KPL/IK
+
+MERTIS Instrument Kernel
+===========================================================================
+
+   This instrument kernel (I-kernel) contains references to mounting
+   alignment, operating modes, and timing as well as internal and FOV
+   geometry for the BepiColombo MPO MErcury Radiometer and Thermal
+   Infrared Spectrometer (MERTIS).
+
+
+Version and Date
+---------------------------------------------------------------------------
+
+   Version 0.5 -- May 22, 2020 -- Marc Costa Sitja, ESAC/ESA
+
+      Added optical and detector parameters for all sensors.
+
+   Version 0.4 -- April 2, 2020 -- Marc Costa Sitja, ESAC/ESA
+
+      FOV cross-track angles have been corrected following
+      clarification for the Earth Flyby.
+
+   Version 0.3 -- March 9, 2018 -- Marc Costa Sitja, ESAC/ESA
+                                   Alessandro Maturilli, DLR
+
+      Added Optical and Detector parameters.
+
+   Version 0.2 -- February 15, 2017 -- Marc Costa Sitja, ESAC/ESA
+
+      Updated instrument description and added main parameters table.
+      Pending review from BepiColombo SGS and MERTIS instrument team.
+
+   Version 0.1 -- July 08, 2016 -- Marc Costa Sitja, ESAC/ESA
+
+      Updated BEPICOLOMBO MPO IDs from -69 to -121.
+      Removed kernel name and version assignment.
+
+   Version 0.0 -- February 11, 2013 -- Jonathan McAuliffe, ESAC/ESA
+
+      Initial prototype release.
+
+
+References
+---------------------------------------------------------------------------
+
+   1.  ``Kernel Pool Required Reading''
+
+   2.  BepiColombo MPO Spacecraft Frames Definition Kernel
+
+   3.  ``Frames Required Reading''
+
+   4.  ``C-Kernel Required Reading''
+
+   5.  ``The Mercury Radiometer and Thermal Infrared Spectrometer
+       (MERTIS) for the BepiColombo mission'', Planetary and Space
+       Science 58 (2010) 144-165.
+
+   6.  ``MERTIS User Manual''
+
+   7.  ``MERITS Experiment Interface Document B (EID-B)''
+
+   8.  E-Mail ``BepiColombo New Operational Kernels Available -
+       Earth-Flyby Kernels'' from Alessandro Maturilli (DLR),
+       2 April 2020.
+
+
+Contact Information
+-----------------------------------------------------------------------------
+
+   If you have any questions regarding this file contact the ESA SPICE
+   Service at ESAC:
+
+           Marc Costa Sitja
+           (+34) 91-8131-457
+           marc.costa@esa.int, esa_spice@sciops.esa.int
+
+
+Implementation Notes
+-----------------------------------------------------------------------------
+
+   This file is used by the SPICE system as follows: programs that make use
+   of this frame kernel must "load" the kernel normally during program
+   initialization. Loading the kernel associates the data items with
+   their names in a data structure called the "kernel pool".  The SPICELIB
+   routine FURNSH loads a kernel into the pool as shown below:
+
+     FORTRAN: (SPICELIB)
+
+       CALL FURNSH ( frame_kernel_name )
+
+     C: (CSPICE)
+
+       furnsh_c ( frame_kernel_name );
+
+     IDL: (ICY)
+
+       cspice_furnsh, frame_kernel_name
+
+     MATLAB: (MICE)
+
+          cspice_furnsh ( 'frame_kernel_name' )
+
+     PYTHON: (SPICEYPY)*
+
+       furnsh( frame_kernel_name )
+
+   In order for a program or routine to extract data from the pool, the
+   SPICELIB routines GDPOOL, GIPOOL, and GCPOOL are used.  See [2] for
+   more details.
+
+   This file was created and may be updated with a text editor or word
+   processor.
+
+   * SPICEPY is a non-official, community developed Python wrapper for the
+     NAIF SPICE toolkit. Its development is managed on Github.
+     It is available at: https://github.com/AndrewAnnex/SpiceyPy
+
+
+Naming Conventions
+---------------------------------------------------------------------------
+
+    Data items are specified using ''keyword=value'' assignments [1].
+    All keywords referencing values in this I-kernel start with the
+    characters `INS' followed by the NAIF MPO instrument ID code,
+    constructed using the spacecraft ID number (-69) followed by the NAIF
+    three digit ID number for one of the MERTIS data item.
+
+    These IDs are as follows
+
+        Instrument name           ID
+        --------------------    -------
+        MPO_MERTIS_PLANET       -121201
+        MPO_MERTIS_PLANET_TIS   -121211
+        MPO_MERTIS_PLANET_TIR   -121221
+
+        MPO_MERTIS_SPACE        -121202
+        MPO_MERTIS_SPACE_TIS    -121212
+        MPO_MERTIS_SPACE_TIR    -121222
+
+    The remainder of the name is an underscore character followed by the
+    unique name of the data item.  For example, the TIS boresight direction
+    in the MPO_MERTIS_PLANET frame (see [2]) is specified by:
+
+        INS-121211_BORESIGHT
+
+    The upper bound on the length of the name of any data item identifier
+    is 32 characters.
+
+    If the same item is included in more than one file, or if the same item
+    appears more than once within a single file, the latest value supersedes
+    any earlier values.
+
+
+Overview
+---------------------------------------------------------------------------
+
+    From [5]:
+
+    The Mercury Radiometer and Thermal Infrared Spectrometer (MERTIS) is an
+    innovative instrument for studying the surface composition and mineralogy
+    of planet Mercury. MERTIS combines an uncooled grating push broom
+    IR-spectrometer (TIS) with a radiometer (TIR), which will operate in the
+    wavelength region of 7-14 and 7-40 um, respectively. The spatial
+    resolution of the MERTIS observations will be about 500 m globally and
+    better than 500 m for approximately 5-10 percent of the surface.
+
+    MERTIS has heritage from the Mars Express Planetary Fourier Spectrometer
+    (PFS), the Visual and Thermal Imaging Spectro-meter (VIRTIS) for the
+    Rosetta and Venus Express missions, and the Bispectral Infrared Detection
+    (BIRD). Due to the integrated instrument approach of the proposed design,
+    MERTIS-TIS and MERTIS-TIR share the same optics, instrument electronics
+    and in-flight calibration components, similar to PFS on Mars Express.
+
+    MERTIS features two channels, the spectrometric and the radiometric
+    channel. Both channels are highly integrated and use the same entrance
+    optics and the same calibration sources according an in-plane separation
+    arrangement. The highly miniaturized radiometer is positioned at the slit
+    of the spectrometer. Data is obtained in a push-broom mode.
+
+    The radiometer has two channels of 15 thermopiles, one channel on each
+    side of the slit. Filters placed directly on the thermopile arrays will
+    select the range from 7-14 mico m for one channel and 7-40 micro m. While
+    the first channel is used for cross calibration with the spectrometric
+    channel, the latter will allow measurements of the surface temperature
+    down to 100K with accuracy better than 1K.
+
+    The spectrometric channel is an IR-imaging spectrometer based on the
+    push-broom principle. It is based on an un-cooled micro-bolometer array
+    providing spectral separation and spatial resolution according to its 2
+    dimensional shape.
+
+    The operation concept principle for both channels is characterized by
+    intermediate scanning of the planet surface and 3 different calibration
+    targets - free space and on-board black body sources at 300K and 700K. The
+    measurement of free space as a zero radiance reference allows determining
+    the instrument energy. The black body sources will allow a radiometric
+    calibration of both channels. The temperatures are selected to reflect the
+    instrument temperature (~300K) and the temperature of the dayside of
+    Mercury.
+
+    The general instrument architecture comprises two functionally independent
+    parts - the Sensor Head and the Electronics Unit. Due to the need for a
+    high degree of miniaturisation the physical layout of these units are
+    inseparable. The suite is completed by a pointing device which orients the
+    optical path to incoming radiation sequentially from Mercury, free space
+    and black body devices emitting at 300 and 700 K as calibration targets.
+
+    Passing a highly reflective baffle in front of the instrument the IR
+    radiation is guided via the pointing device through an IR-window to the
+    entrance optics. This part ends up with a slit at the intermediate focus
+    which is the interface to the spectrometer optics. Diffracted by a curved
+    grating the beam is focused onto the bolometer. Within the Sensor Head all
+    proximity electronics is contained. A critical issue is the thermal design
+    of this unit because the changes in temperature will cause significant
+    misinterpretation of the measurements.
+
+   The following table summarizes the instrument optics, performances and
+   resolution:
+
+      Parameter            |  Units     |  Spectrometer   |  Radiometer
+   ========================+============+=================+===================
+     Focal length          |  mm        |                50
+     Focal number          |            |                 2
+     Optical efficiency    |            |               0.540
+     ----------------------+------------+-----------------+-----------------
+     Spectrometer detector |            |  Bolometer      |  Thermopile line
+                           |            |  array          |  array
+     ----------------------+------------+-----------------+-----------------
+     Detector illuminated  |            |  160 x 120 pix  |  2 x 15 pix
+     pixels                |            |  @ 35 micro m   |  @ 250 micro m
+                           |            |  (100 spacial,  |
+                           |            |  80 spectral)   |
+     ----------------------+------------+-----------------+-----------------
+     Spectral range        | micro m    |  7-14           |  7-40
+     ----------------------+------------+-----------------+-----------------
+     Spectral Channel      | nm/pixel   |  90             |
+     width                 |            |                 |
+        Line Array 1       | micro m    |                 |  7-14 (filter)
+        Line Array 2       | micro m    |                 |  7-40
+     ----------------------+------------+-----------------+-----------------
+     Spectral resolution / | nm         |  78-156         |
+     Spectral sampling     |            |                 |
+     distance              |            |                 |
+     ----------------------+------------+-----------------+-----------------
+     Detectivity           |            |                 |
+        D*                 | cm*Hz^0.5* |                 |  7*10^8
+                           | Hz^(-1)    |                 |
+        NEP                | pW         |  15             |
+     ----------------------+------------+-----------------+-----------------
+     Field of view (FOV)   | degrees    |  4 x 0          |  4 x 1
+     ----------------------+------------+-----------------+-----------------
+     Instantaneous FOV     | mrad       |  0.7            |
+     ----------------------+------------+-----------------+-----------------
+     Dwell time            |            |                 |
+        Periherm 400km     | ms         |  109            |  775
+        Apoherm 1500km     | ms         |  784            |  5597
+     ----------------------+------------+-----------------+-----------------
+     Swath Width           | km         |                28
+     Instrument dimension  | mm^3       |          192 x 181 x 126
+     External baffles dim. | mm^3       |     200 x diam 73 & 85 x diam 75
+     Mass                  | kg         |                3.3
+     Power Consumption     | W          |  7.2 - 13 (16W sensor head heated)
+     Data Rate             | KBit/s     |               1-1263
+
+
+Mounting Alignment
+---------------------------------------------------------------------------
+
+    Refer to the latest version of the BepiColombo Frames Definition Kernel
+    (FK) [4] for the MERTIS reference frame definitions and mounting
+    alignment information.
+
+
+Optical Parameters
+---------------------------------------------------------------------------
+
+   The following MERTIS TIR and TIS nominal first order optical parameters
+   are included in the data section below:
+
+      Parameter            |  Units     |  Value
+   ========================+============+=================
+     Focal length          |  mm        |    50
+     ----------------------+------------+-----------------
+     Focal number          |            |     2
+     ----------------------+------------+-----------------
+     Optical efficiency    |            |     0.540
+     ----------------------+------------+-----------------
+     Instantaneous FOV     |  mrad      |     0.7
+
+
+   The keywords below provide nominal values from the table above.
+   Angular size values in the keywords are given radians, with the
+   cross-track size being the first value and the along-track size
+   being the second value in each pair.
+
+
+      \begindata
+
+         INS-121210_FOCAL_LENGTH       = (  50.0                )
+         INS-121210_F/RATIO            = (   2.0                )
+         INS-121210_FOV_ANGULAR_SIZE   = (   0.069813, 0.000698 )
+         INS-121210_IFOV               = (   0.000700, 0.000700 )
+
+         INS-121211_FOCAL_LENGTH       = (  50.0                )
+         INS-121211_F/RATIO            = (   2.0                )
+         INS-121211_FOV_ANGULAR_SIZE   = (   0.069813, 0.000698 )
+         INS-121211_IFOV               = (   0.000700, 0.000700 )
+
+         INS-121212_FOCAL_LENGTH       = (  50.0                )
+         INS-121212_F/RATIO            = (   2.0                )
+         INS-121212_FOV_ANGULAR_SIZE   = (   0.069813, 0.000698 )
+         INS-121212_IFOV               = (   0.000700, 0.000700 )
+
+         INS-121220_FOCAL_LENGTH       = (  50.0                )
+         INS-121220_F/RATIO            = (   2.0                )
+         INS-121220_FOV_ANGULAR_SIZE   = (   0.069813, 0.017453 )
+         INS-121220_IFOV               = (   0.000700, 0.000700 )
+
+         INS-121221_FOCAL_LENGTH       = (  50.0                )
+         INS-121221_F/RATIO            = (   2.0                )
+         INS-121221_FOV_ANGULAR_SIZE   = (   0.069813, 0.017453 )
+         INS-121221_IFOV               = (   0.000700, 0.000700 )
+
+         INS-121222_FOCAL_LENGTH       = (  50.0                )
+         INS-121222_F/RATIO            = (   2.0                )
+         INS-121222_FOV_ANGULAR_SIZE   = (   0.069813, 0.017453 )
+         INS-121222_IFOV               = (   0.000700, 0.000700 )
+
+      \begintext
+
+
+Detector Parameters
+---------------------------------------------------------------------------
+
+   The nominal MERTIS detector parameters are:
+
+
+     Spectrometer detector |            |  Bolometer      |  Thermopile line
+                           |            |  array          |  array
+   ========================+============+====================================
+     Detector illuminated  |            |  160 x 120 pix  |  2 x 15 pix
+     pixels                |            |  @ 35 micro m   |  @ 250 micro m
+                           |            |  (100 spacial,  |
+                           |            |  80 spectral)   |
+     ----------------------+------------+-----------------+-----------------
+     Spectral range        | micro m    |  7-14           |  7-40
+     ----------------------+------------+-----------------+-----------------
+     Spectral Channel      | nm/pixel   |  90             |
+     width                 |            |                 |
+        Line Array 1       | micro m    |                 |  7-14 (filter)
+        Line Array 2       | micro m    |                 |  7-40
+     ----------------------+------------+-----------------+-----------------
+     Spectral resolution / | nm         |  78-156         |
+     Spectral sampling     |            |                 |
+     distance              |            |                 |
+     ----------------------+------------+-----------------+-----------------
+     Detectivity           |            |                 |
+        D*                 | cm*Hz^0.5* |                 |  7*10^8
+                           | Hz^(-1)    |                 |
+        NEP                | pW         |  15             |
+
+
+   and the values which are defined as SPICE data:
+
+
+             parameter              |  TIS (Bolometer) |   TIR (Thermopile)
+   =================================+==================|====================
+      Detector Array Size/Physical  |                  |
+          Along-track               |   120            |       2
+          Cross-track               |   160            |      15
+      ------------------------------+------------------+--------------------
+      Detector Array Size/Spatial   |                  |
+          Along-track               |   420 micro m    |	50 micro m
+          Cross-track               |   560 micro m    |	3640 micro m
+      ------------------------------+------------------+--------------------
+      Detector Array Center/Spatial |                  |
+          Along-track               |   210 micro m    |	25 micro m
+          Cross-track               |   280 micro m    |	1820 micro m
+      ------------------------------+------------------+--------------------
+      Pixel Size, microns/Spatial   |                  |
+          Cross-track               |        35        |      1100
+          Along-track               |        35        |      200
+
+
+   The values are given in microns for PIXEL_SIZE keywords and in counts
+   for PIXEL_SAMPLES, PIXEL_LINES, and CENTER keywords.
+
+      \begindata
+
+         INS-121210_PIXEL_SIZE         = ( 35, 35)
+         INS-121210_PIXEL_SAMPLES      = ( 120 )
+         INS-121210_PIXEL_LINES        = ( 160 )
+         INS-121210_CCD_CENTER         = ( 60, 80.0 )
+
+         INS-121211_PIXEL_SIZE         = ( 35, 35)
+         INS-121211_PIXEL_SAMPLES      = ( 120 )
+         INS-121211_PIXEL_LINES        = ( 160 )
+         INS-121211_CCD_CENTER         = ( 60, 80.0 )
+
+         INS-121212_PIXEL_SIZE         = ( 35, 35)
+         INS-121212_PIXEL_SAMPLES      = ( 120 )
+         INS-121212_PIXEL_LINES        = ( 160 )
+         INS-121212_CCD_CENTER         = ( 60, 80.0 )
+
+         INS-121220_PIXEL_SIZE         = ( 1100.00, 200.00 )
+         INS-121220_PIXEL_SAMPLES      = (   2 )
+         INS-121220_PIXEL_LINES        = (  15 )
+         INS-121220_CCD_CENTER         = (  1,  7.5 )
+
+         INS-121221_PIXEL_SIZE         = ( 1100.00, 200.00 )
+         INS-121221_PIXEL_SAMPLES      = (   2 )
+         INS-121221_PIXEL_LINES        = (  15 )
+         INS-121221_CCD_CENTER         = (  1,  7.5 )
+
+         INS-121222_PIXEL_SIZE         = ( 1100.00, 200.00 )
+         INS-121222_PIXEL_SAMPLES      = (   2 )
+         INS-121222_PIXEL_LINES        = (  15 )
+         INS-121222_CCD_CENTER         = (  1,  7.5 )
+
+      \begintext
+
+
+FOV Definitions
+---------------------------------------------------------------------------
+
+    The following is a summary of the MERTIS fields of views:
+
+        -----------------  ----------------  ----------------
+         Slit               Horizontal        Vertical
+        -----------------  ----------------  ----------------
+           TIS               4.0  degrees      0.04 degrees
+
+           TIR               4.0  degrees      1.0  degrees
+        -----------------  ----------------  ----------------
+
+    where the horizontal direction lies along the spacecraft Y-axis and
+    the vertical is along the spacecraft X-axis (from [8]).
+
+    The rotating pointing mechanism in MERTIS allows the TIR field of
+    view to be pointed at either the surface (PLANET), cold space (SPACE)
+    or one of the 2 onboard calibration sources.
+
+   MERTIS TIS FOV:
+   ~~~~~~~~~~~~~~~
+
+    The rotating pointing mechanism in MERTIS allows the TIS field of
+    view to be pointed at either the surface (PLANET), cold space (SPACE)
+    or one of the 2 onboard calibration sources.
+
+    The TIS slit creates a rectangular field of view with angular dimensions
+    of 4.0 x 0.040107 degrees. The larger of the two angles extends along
+    the S/C +Y axis for the planet view and along the S/C +X axis for the
+    space view.
+
+
+                               ^ +Ymer (cross track)
+                               |                            ^  direction
+     |                         |                            |  of
+     | 0.040107 degrees        |                            |  flight
+     |                         |
+     v         Pixel 1         |         Pixel 256
+    ---              +---------|---------+
+     |       1 line  |         x-------------> +Xmer (across track)
+    ---              +-------------------+
+     ^                   256 pixels/line
+     |
+                     |     4.0 degrees   |
+                     |<----------------->|
+                     |                   |      Boresight (+Z axis)
+                                                 is into the page
+
+    The following diagrams illustrate the above field of view in the
+    instrument frame:
+
+                 X                                 Y
+                  mer                               mer
+                ^     /                           ^     /
+                |    /                            |    /
+                |   /                             |   /
+                |  /                              |  /
+           Y    | /   o                      X    | /    o
+            mer |/ 2.0                        mer |/ 0.02
+                x-------->                        o-------->
+                |\         Z                      |\         Z
+                | \         ins                   | \         ins
+                |  \                              |  \
+                |   \                             |   \
+                |    \                            |    \
+                |     \                           |     \
+                              Plane X = 0                       Plane Y = 0
+
+   The TIS FOV is nominaly defined with respect to the MPO_MERTIS reference
+   frame. There are two additional auxiliary definitions to use the FOV in
+   the MPO_MERTIS_PLANET and MPO_MERTIS_SPACE reference frames. Please note
+   that the FOV reference and cross angles are defined with half angle values.
+
+   The following FOV definition corresponds to the NAIF Body Names:
+   MPO_MERTIS_TIS, MPO_MERTIS_TIS_PLANET and MPO_MERTIS_TIS_SPACE.
+
+   \begindata
+
+      INS-121210_NAME            = 'MPO_MERTIS_TIS'
+      INS-121210_BORESIGHT       = ( 0.0, 0.0, 1.0 )
+      INS-121210_FOV_FRAME       = 'MPO_MERTIS'
+      INS-121210_FOV_SHAPE       = 'RECTANGLE'
+      INS-121210_FOV_CLASS_SPEC  = 'ANGLES'
+      INS-121210_FOV_REF_VECTOR  = ( 1.0, 0.0, 0.0 )
+      INS-121210_FOV_REF_ANGLE   = ( 0.02 )
+      INS-121210_FOV_CROSS_ANGLE = ( 2.0  )
+      INS-121210_FOV_ANGLE_UNITS = 'DEGREES'
+
+      INS-121211_NAME            = 'MPO_MERTIS_TIS_PLANET'
+      INS-121211_BORESIGHT       = ( 0.0, 0.0, 1.0 )
+      INS-121211_FOV_FRAME       = 'MPO_MERTIS_PLANET'
+      INS-121211_FOV_SHAPE       = 'RECTANGLE'
+      INS-121211_FOV_CLASS_SPEC  = 'ANGLES'
+      INS-121211_FOV_REF_VECTOR  = ( 1.0, 0.0, 0.0 )
+      INS-121211_FOV_REF_ANGLE   = ( 0.02 )
+      INS-121211_FOV_CROSS_ANGLE = ( 2.0  )
+      INS-121211_FOV_ANGLE_UNITS = 'DEGREES'
+
+      INS-121212_NAME            = 'MPO_MERTIS_TIS_SPACE'
+      INS-121212_BORESIGHT       = ( 0.0, 0.0, 1.0 )
+      INS-121212_FOV_FRAME       = 'MPO_MERTIS_SPACE'
+      INS-121212_FOV_SHAPE       = 'RECTANGLE'
+      INS-121212_FOV_CLASS_SPEC  = 'ANGLES'
+      INS-121212_FOV_REF_VECTOR  = ( 1.0, 0.0, 0.0 )
+      INS-121212_FOV_REF_ANGLE   = ( 2.0 )
+      INS-121212_FOV_CROSS_ANGLE = ( 0.02  )
+      INS-121212_FOV_ANGLE_UNITS = 'DEGREES'
+
+   \begintext
+
+
+   MERTIS TIR FOV:
+   ~~~~~~~~~~~~~~~
+
+   The TIR surface slit creates a rectangular field of view
+   with angular dimensions of 4.0 x 1.0 degrees. The larger of the two
+   angles extends along the S/C +Y axis for the planet view and along
+   the S/C +X axis for the space view.
+
+                               ^ +Ymer (cross track)
+                               |                            ^  direction
+     |                         |                            |  of
+     | 1.0 degree              |                            |  flight
+     |                         |
+     v         Pixel 1         |         Pixel 256
+    ---              +---------|---------+
+     |       1 line  |         x-------------> +Xmer (across track)
+    ---              +-------------------+
+     ^                   256 pixels/line
+     |
+                     |     4.0 degrees   |
+                     |<----------------->|
+                     |                   |      Boresight (+Z axis)
+                                                 is into the page
+
+   The following diagrams illustrate the above field of view in the
+   instrument frame:
+
+                 X                                 Y
+                  mer                               mer
+                ^     /                           ^     /
+                |    /                            |    /
+                |   /                             |   /
+                |  /                              |  /
+           Y    | /   o                      X    | /   o
+            mer |/ 2.0                        mer |/ 0.5
+                x-------->                        o-------->
+                |\         Z                      |\         Z
+                | \         ins                   | \         ins
+                |  \                              |  \
+                |   \                             |   \
+                |    \                            |    \
+                |     \                           |     \
+                              Plane X = 0                       Plane Y = 0
+
+
+   The TIR FOV is nominaly defined with respect to the MPO_MERTIS reference
+   frame. There are two additional auxiliary definitions to use the FOV in
+   the MPO_MERTIS_PLANET and MPO_MERTIS_SPACE reference frames. Please note
+   that the FOV reference and cross angles are defined with half angle values.
+
+   The following FOV definition corresponds to the NAIF Body Names:
+   MPO_MERTIS_TIR, MPO_MERTIS_TIR_PLANET and MPO_MERTIS_TIR_SPACE.
+
+      \begindata
+
+         INS-121220_NAME            = 'MPO_MERTIS_TIR'
+         INS-121220_BORESIGHT       = ( 0.0, 0.0, 1.0 )
+         INS-121220_FOV_FRAME       = 'MPO_MERTIS'
+         INS-121220_FOV_SHAPE       = 'RECTANGLE'
+         INS-121220_FOV_CLASS_SPEC  = 'ANGLES'
+         INS-121220_FOV_REF_VECTOR  = ( 1.0, 0.0, 0.0 )
+         INS-121220_FOV_REF_ANGLE   = ( 0.5  )
+         INS-121220_FOV_CROSS_ANGLE = ( 2.0 )
+         INS-121220_FOV_ANGLE_UNITS = 'DEGREES'
+
+         INS-121221_NAME            = 'MPO_MERTIS_TIR_PLANET'
+         INS-121221_BORESIGHT       = ( 0.0, 0.0, 1.0 )
+         INS-121221_FOV_FRAME       = 'MPO_MERTIS_PLANET'
+         INS-121221_FOV_SHAPE       = 'RECTANGLE'
+         INS-121221_FOV_CLASS_SPEC  = 'ANGLES'
+         INS-121221_FOV_REF_VECTOR  = ( 1.0, 0.0, 0.0 )
+         INS-121221_FOV_REF_ANGLE   = ( 0.5  )
+         INS-121221_FOV_CROSS_ANGLE = ( 2.0 )
+         INS-121221_FOV_ANGLE_UNITS = 'DEGREES'
+
+         INS-121222_NAME            = 'MPO_MERTIS_TIR_SPACE'
+         INS-121222_BORESIGHT       = ( 0.0, 0.0, 1.0 )
+         INS-121222_FOV_FRAME       = 'MPO_MERTIS_SPACE'
+         INS-121222_FOV_SHAPE       = 'RECTANGLE'
+         INS-121222_FOV_CLASS_SPEC  = 'ANGLES'
+         INS-121222_FOV_REF_VECTOR  = ( 1.0, 0.0, 0.0 )
+         INS-121222_FOV_REF_ANGLE   = ( 2.0  )
+         INS-121222_FOV_CROSS_ANGLE = ( 0.5 )
+         INS-121222_FOV_ANGLE_UNITS = 'DEGREES'
+
+      \begintext
+
+
+Optical Distortion
+--------------------------------------------------------
+
+   N/A.
+
+
+End of IK file.

@@ -1,0 +1,1416 @@
+KPL/IK
+
+SERENA Instrument Kernel
+===========================================================================
+
+   This instrument kernel (I-kernel) contains references to mounting
+   alignment, operating modes, and timing as well as internal and FOV
+   geometry for the BepiColombo MPO Search for Exospheric Refilling and 
+   Emitted Natural Abundances (SERENA).
+
+
+Version and Date
+-----------------------------------------------------------------------------
+
+   Version 0.5 -- February 18, 2018 -- Alessandro Moura, IAPS/INAF
+                                       Marc Costa Sitja, ESAC/ESA
+
+      The PICAM FOVs have been simplified in order to provide one realistic
+      FOV for users (0-70 degrees), the ``ring'' FOVs have been kept as text.
+
+   Version 0.4 -- July 31, 2018 -- Marc Costa Sitja, ESAC/ESA
+                                   Alessandro Moura, IAPS/INAF
+
+      Minor corrections in ELENA main parameters.
+
+
+   Version 0.3 -- May 21, 2018 -- Marc Costa Sitja, ESAC/ESA
+                                  Alessandro Moura, IAPS/INAF
+
+      Incorporated two implementations of the SERENA ELENA FOV. First as
+      trapezium that approximates the iFOV envelope of the 32 anodes
+      (MPO_SERENA_ELENA) and 32 FOVs that correspond to the iFOV of the
+      anodes (MPO_SERENA_EENA_AP_NN).
+      A set of three additional FOVs for SELENA PICAM are defined in order to
+      incorporate three 30 degrees sectors of the complete FOV.
+      Added SERENA IDs in IK not to overload the MPO FK.
+
+   Version 0.2 -- March 12, 2018 -- Marc Costa Sitja, ESAC/ESA
+
+      Corrected SERENA accronym.
+
+   Version 0.1 -- March 2, 2017 -- Marc Costa Sitja, ESAC/ESA
+
+      Added FOV definition for STROFIO CK dependent frame. Pending review from 
+      the SERENA instrument team and the BepiColombo SGS.
+
+   Version 0.0 -- January 15, 2017 -- Marc Costa Sitja, ESAC/ESA
+
+      First draft.
+
+
+References
+-----------------------------------------------------------------------------
+
+   1.  ``Kernel Pool Required Reading''
+
+   2.  ``Frames Required Reading''
+
+   3.  ``C-Kernel Required Reading"
+
+   4.   BepiColombo MPO Spacecraft Frames Definition Kernel
+
+   5.   ``BepiColombo PHEBUS - Instrument User Manual'',
+        PHEB_UM_INST_111107_1_LATMOS, Issue 1, Release 1, Draft 4, 
+        15th October 2015  
+   
+   6.   ``SERENA Experiment Interface Document - Part B'',
+        BC-EST-RS-02522, Draft 3, 12th February 2009
+
+   7.   E-mail communication ``SERENA EXPRO - (WP-201/a and WP-201/b)
+        comments on Kernels'', by Alessandro Moura (IAPS/INAF),
+        31st July 2018.
+           
+
+Contact Information
+-----------------------------------------------------------------------------
+
+   If you have any questions regarding this file contact SPICE support at
+   ESAC:
+
+           Marc Costa Sitja
+           (+34) 91-8131-457
+           mcosta@sciops.esa.int, esa_spice@sciops.esa.int
+
+
+Implementation Notes
+-----------------------------------------------------------------------------
+
+   This file is used by the SPICE system as follows: programs that make use
+   of this frame kernel must "load" the kernel normally during program
+   initialization. Loading the kernel associates the data items with
+   their names in a data structure called the "kernel pool".  The SPICELIB
+   routine FURNSH loads a kernel into the pool as shown below:
+ 
+     FORTRAN: (SPICELIB)
+ 
+       CALL FURNSH ( frame_kernel_name )
+ 
+     C: (CSPICE)
+ 
+       furnsh_c ( frame_kernel_name );
+ 
+     IDL: (ICY)
+ 
+       cspice_furnsh, frame_kernel_name
+ 
+     MATLAB: (MICE)
+       
+          cspice_furnsh ( 'frame_kernel_name' )
+ 
+     PYTHON: (SPICEYPY)*
+ 
+          furnsh( frame_kernel_name )
+ 
+   In order for a program or routine to extract data from the pool, the
+   SPICELIB routines GDPOOL, GIPOOL, and GCPOOL are used.  See [2] for
+   more details.
+ 
+   This file was created and may be updated with a text editor or word
+   processor.
+ 
+   * SPICEPY is a non-official, community developed Python wrapper for the
+     NAIF SPICE toolkit. Its development is managed on Github.
+     It is available at: https://github.com/AndrewAnnex/SpiceyPy
+
+
+Naming Conventions
+-----------------------------------------------------------------------------
+
+    Data items are specified using ''keyword=value'' assignments [1].
+    All keywords referencing values in this I-kernel start with the
+    characters `INS' followed by the NAIF MPO instrument ID code,
+    constructed using the spacecraft ID number (-121) followed by the NAIF
+    three digit ID number for one of the SIXS data item.
+
+    These IDs are as follows
+
+        Instrument name          ID
+        --------------------   ------
+
+        MPO_SERENA_ELENA       -121510
+        MPO_SERENA_MIPA        -121520
+        MPO_SERENA_PICAM       -121530
+        MPO_SERENA_STROFIO+X   -121541
+        MPO_SERENA_STROFIO-X   -121542
+        MPO_SERENA_STROFIO     -121543
+ 
+
+    The remainder of the name is an underscore character followed by the
+    unique name of the data item.  For example, the SELENA sensor
+    boresight direction in the MPO_SERENA_ELENA frame (see [2]) is specified 
+    by:
+
+        INS-121510_BORESIGHT
+
+    The upper bound on the length of the name of any data item identifier
+    is 32 characters.
+
+    If the same item is included in more than one file, or if the same item
+    appears more than once within a single file, the latest value supersedes
+    any earlier values.
+
+
+Overview
+-----------------------------------------------------------------------------
+
+   From [5] and [6]:
+
+   The Search for Exospheric Refilling and Emitted Natural Abundances (SERENA) 
+   is a single instrument composed by 4 units devoted to the detection of 
+   neutral and ionized particles in the Hermean environment. It addresses some 
+   of the main scientific objectives of the BepiColombo mission: composition, 
+   origin and dynamics of Mercury's exosphere and polar deposits; and 
+   structure and dynamics of Mercury's magnetosphere. Each unit is able to 
+   operate individually and to achieve its specific scientific objectives. In 
+   addition, the opportunity to operate sensors simultaneously greatly 
+   improves the success of scientific objectives and allows for additional 
+   objectives.
+
+   The major goals of SERENA are:
+      1. Exosphere composition and spatial distribution and dynamics
+      2. Search for exo-ionosphere and its relation with neutral atmosphere
+      3. Surface release processes.
+      4. Atmosphere/magnetosphere exchange and transport processes
+      5. Escape, source/sink balance, geochemical cycles
+
+   ELENA:
+   ~~~~~~
+
+      The Emitted Low-Energy Neutral Atoms sensor, namely ELENA, is a
+      pin-hole camera with angular resolution of ~5 degrees.
+
+      The external collimator defines the overall ELENA FOVs and instrument 
+      aperture. It is implemented by the S/C skin opening hole surrounded by a 
+      scalloped metal shield envelope for minimizing thermal and visible 
+      radiation inputs. The collimator will be a part of the ELENA Box and 
+      will be flanged on the nadir facing wall of the instrument
+
+      Integrated to the ELENA box collimator / lateral wall I/F there will be 
+      housed a metal mesh to limit the infrared input heat load from the 
+      planet albedo.
+
+      The following table provides the principal optical, performance and 
+      resolution parameters of the unit:
+
+               Parameter          |  Units       |  Value/Description Remarks
+         -------------------------+--------------+----------------------------
+          Optics                  |              |       
+                                  |              |
+              Aperture            |  mm          |   10 (Square apperture of 
+                                  |              |   100 mm^2)
+              Focal length        |  mm          |   100
+              Focal number        |              |   10 
+              Field of view       |  degrees     |   4.5 x 76 (across track)
+              Central obstruction |  %           |   50
+              Pixel IFOV          |  sterad      |   3200^-4 (spherical angle)
+              Spectral range      |  keV         |   0.02+5
+              Geometry Factor     |  cm^2*sr     |   2.5 * 10^-4
+              Dynamic range       |              |   10^4
+                                  |              |
+         Sensor (MCPs based)      |              | 
+                                  |              | 
+              Pixel lines         |  #           |   1
+              Pixels per line     |  #           |   32
+              Scale per pixel     |              |
+                 At Periherm      |  km/px       |   30
+              Exposure time       |  ms          |   6000
+              Imaging sequence    |  s           |   30 (Nominal Mode)
+              duration            |              |
+                                  |              | 
+         Resolution               |              | 
+                                  |              | 
+             Angular resolution   |  milirad/px  |   87
+             Spatial resolution   |              |   
+                At Periherm       |  km/pixel    |   30
+             Dwell Time           |              |
+                At Periherm       |  s           |   6
+                At Apoherm        |  s           |   12
+                                  |              |
+
+   MIPA:
+   ~~~~~
+
+      MIPA (Miniature Ion Precipitation Analyser) is a simple ion mass 
+      analyser optimised to provide monitoring of the precipitating ions using 
+      as little spacecraft resource as possible. The analyser is, yet, capable 
+      to measure all main groups of ions present in the magnetosphere. The
+      energy range and mass range of the analyser is optimised to cover 
+      accelerated ionospheric ions.
+
+      The following table provides the principal optical, performance and 
+      resolution parameters of the unit:
+
+               Parameter          |  Units       |  Value/Description Remarks
+         -------------------------+--------------+----------------------------
+          Optics                  |              |       
+                                  |              |
+              Field of view       |  degrees     |   90 x 360 (View across MPO
+                                  |              |   track in orbital plane. 
+                                  |              |   Central axis +/- RAM dir.)
+              Central obstruction |  %           |   0
+              Spectral range      |  keV         |   0.01-15
+              Spectral Channels   |              |   32 (Energy steps)
+              Geometry Factor     |  cm^2*sr eV  |   0.19
+              Dynamic range       |  cts / cm^2  |   10^6
+                                  |  sr*KeV      | 
+                                  |              |
+         Sensor (CCEM)            |              | 
+                                  |              | 
+              Exposure time       |  ms          |   31.25 (Sampling time per
+                                  |              |   step)
+              Imaging sequence    |  s           |   8 (Full energy and
+              duration            |              |   elevations sweep)
+                                  |              |
+              Energy Resolution   |  %           |   7
+                                  |              | 
+         Resolution               |              | 
+                                  |              | 
+             Angular resolution   |  degrees     |   4.5 x 22.5
+                                  |              |
+
+   PICAM:
+   ~~~~~~
+
+      The PICAM (Planetary Ion CAMera) ion mass spectrometer operates as an 
+      all-sky camera for charged particles (Vaisberg, 2001) allowing the 
+      determination of the 3D velocity distribution and mass spectrum for ions 
+      over a full 2% FOV, from thermal up to ~ 3 keV energies and in a mass 
+      range extending up to ~ 132 amu (Xenon). The instantaneous 2% FOV 
+      coupled with this mass range and a mass resolution better than ~ 100 is 
+      a unique capability, which provides to PICAM superior performances in 
+      the frame of the MPO mission.
+
+      The following table provides the principal optical, performance and 
+      resolution parameters of the unit:
+
+               Parameter          |  Units       |  Value/Description Remarks
+         -------------------------+--------------+----------------------------
+          Optics                  |              |       
+                                  |              |
+              Field of view       |  degrees     |   90 x 360 (half sphere)
+              Central obstruction |  %           |   10
+              Pixel IFOV          |  microrad    |   ~ 20 x 20 deg
+              Mirror Grating and  |              |   Striated mirror, Cu2S or
+              Coating             |              |   CuO surface
+              Number of channels  |              |   Controllable (Standard:
+                                  |              |   32 energies x 61 angular
+                                  |              |   positions x (1 ... 132)
+                                  |              |   masses)
+              Energy range        |  KeV         |   0.001   3
+              Mass range          |  amu         |   1 ... 132 (Xe)
+              Geometry Factor     |  cm^2*sr     |   2.3 * 10^-4
+              Dynamic range       |  cts / cm^2  |   10^8
+                                  |  sr*KeV      | 
+                                  |              |
+         Sensor (MCPs based)      |              | 
+                                  |              |
+              Active area         |  mm^2        |   625
+              Pixel lines         |  #           |   5 (radial positions)
+              Pixels per line     |  #           |   le 16 (azimuthal pos.)
+              Exposure time       |  ms          |   32 to 1000 (typical time
+                                  |              |   per energy step)
+              Imaging sequence    |  s           |   10 (typical)
+              duration            |              |  
+              Energy Resolution   |  %           |   ~7
+                                  |              |
+
+   STROFIO:
+   ~~~~~~~~
+
+      STROFIO is a novel type of mass spectrometer, where the mass of the 
+      particle is determined by the time of flight through a given region. The 
+      start time is imprinted on the trajectory of the particle by a radio 
+      frequency electric field, that bends the trajectory in a given plane, 
+      and the stop time is the time when the particle reaches the detector. 
+      Every particle is analysed by the system, dramatically increasing the 
+      total sensitivity of the spectrometer. Moreover, its performances will 
+      depend on fast electronics rather than on mechanical tolerances, making 
+      this type of sensors mechanical simple and easy to operate.
+
+      STROFIO comprises of three major components: ionization source; 
+      reflectron, and electronics. The ionization source is the upper portion 
+      that is exposed above the spacecraft MLI, and the rest of the sensor is 
+      mounted beneath the spacecraft deck.
+
+      The STROFIO sensor is composed of a cylindrical detector head mounted on 
+      an optical bench housing the detector proper and readout anodes 
+      ("MCP-Anode"); of two electronic boards stacked at the end of the 
+      cylinder opposite to the detector assemby: the HVPS; and the LVPS, 
+      filament supply and analog processing (PPB).
+
+      The following table provides the principal optical, performance and 
+      resolution parameters of the unit:
+
+               Parameter          |  Units       |  Value/Description Remarks
+         -------------------------+--------------+----------------------------
+          Optics                  |              |       
+                                  |              |
+              Aperture            |  mm          |   10 (2 circular appertures 
+                                  |              |   of 80 mm^2 each)
+              Focal length        |  mm          |   300 (equivalent TOF)
+              Field of view       |  degrees     |   20 x 20 (RAM and anti-RAM)
+              Pixel IFOV          |  microrad    |   123,000
+              Spectral range      |  keV         |   0-50
+              Filter bandwidth    |  nm          | 
+              Spectral Channels   |              |   256 mass channels
+              Geometry Factor     |  counts/     |   0.14
+                                  |  cm^2*s      |
+              Dynamic range       |  particle    |   10 + 10^9
+                                  |  cm^3        | 
+                                  |              |
+         Sensor (MCPs based)      |              | 
+                                  |              | 
+              Pixel lines         |  #           |   1
+              Pixels per line     |  #           |   960 (pixels spanning mass
+                                  |              |   range)
+              Pixel pitch         |  microrad    |   500  
+              Peak quantum        |  %           |   > 50%   
+              efficiency          |              | 
+              Exposure time       |  ms          |   10000 (Spectrum int. time)
+                                  |              |
+         Resolution               |              | 
+                                  |              | 
+             Dwell Time           |              |
+                At Periherm       |  s           |   10
+                At Apoherm        |  s           |   20
+                                  |              |
+
+
+Mounting Alignment
+-----------------------------------------------------------------------------
+
+    Refer to the latest version of the BepiColombo Frames Definition Kernel
+    (FK) [8] for the SERENA reference frame definitions and mounting
+    alignment information.
+
+
+SERENA ELENA Apparent Field-of-View Layout
+-----------------------------------------------------------------------------
+
+   This diagram illustrates the SERENA ELENA apparent FOV in the MPO SERENA 
+   ELENA (MPO_SERENA_ELENA) reference frame.
+
+
+                            ^ +Yelena (across track)
+                            |
+                            |
+                            |                                     
+                          +-|-+                        ---
+                          | | |                         ^            
+                     ---->| | |<---- 4.5 degrees        |            
+                          | | |                         |   
+                          | | |                         |            
+                          | | |                         |      
+                          | | |                         |            
+                          | | |                         |                
+                          | | |                         |            
+                          | | |                         |            
+    +Xelena (along track) | | |                         |            
+               <------------x |                         | 76 degrees   
+                          |   |                         |            
+                          |   |                         |            
+                          |   |                         |            
+                          |   |                         |            
+                          |   |                         |            
+                          |   |                         |            
+                          |   |                         |            
+         <---------       |   |                         |                   
+          direction       |___|                        _v_        
+          of flight   
+                            
+                                         Boresight (+Zelena)
+                                         is out of the page
+
+
+FOV Definitions
+---------------------------------------------------------------------------
+
+   This section contains assignments defining the SERENA Units FOVs. 
+   These definitions are based on the spectrometer parameters
+   provided in the previous sections and are provided in a format
+   consistent with/required by the SPICE TOOLKIT function GETFOV.
+
+
+   SERENA ELENA FOV:
+   ~~~~~~~~~~~~~~~~~
+
+   The ELENA unit is located on the -X panel and has a rectangular FOV of 4.5
+   by 76 degrees. The baffle is pointing along the Nadir direction. ELENA has
+   a pixel intrinsic IFOV of 2 × 2 deg. The whole one-dimensional FOV of 76 deg
+   is composed by 38 pixels. The 1-D FOV is Nadir cross -track oriented
+   (i.e. parallel to the MPO +Y axis) and offset by 8 deg towards the +Y S/C
+   MPO axis thus giving a -30 to 46 deg coverage around Nadir (MPO -Z axis).
+   This offset will allow the detection of the energetic neutral atoms (ENA)
+   coming from the dawn limb of the planet when the MPO is close to its
+   apoherm.
+
+   There are two implementations of the SERENA ELENA FOV. First as trapezium
+   that approximates the iFOV envelope of the 32 anodes (MPO_SERENA_ELENA).
+   The following points are used (in cartesian coordinates):
+
+           P1 =  (  8.5, 110.87, 102 )
+           P2 =  (  8.5, -59.82, 102 )
+           P3 =  ( -8.5, 110.87, 102 )
+           P4 =  ( -8.5, -59.82, 102 )
+
+   
+   The following FOV definition corresponds to the NAIF Body Name: 
+   MPO_SERENA_ELENA.
+
+   \begindata
+
+      INS-121510_NAME                      = 'MPO_SERENA_ELENA'
+      INS-121510_BORESIGHT                 = ( 0.000  0.0000  1.000 )
+      INS-121510_FOV_FRAME                 = 'MPO_SERENA_ELENA'
+      INS-121510_FOV_SHAPE                 = 'POLYGON'
+      INS-121510_FOV_CLASS_SPEC            = 'CORNERS'
+      INS-121510_FOV_BOUNDARY_CORNERS      = ( 8.5  110.87  102
+                                              -8.5  110.87  102
+                                              -8.5  -59.82  102
+                                               8.5  -59.82  102 )
+
+   \begintext
+
+
+   The second implementation is a cloud of 32 FOVs that represent the 32
+   anodes iFOV with a 2 x 2 deg FOV (MPO_SERENA_ELENA_AN_*):
+
+                  |   Boresight in cartesian coordinates
+           Anode  |      X             Y            Z
+          --------|-------------------------------------
+               1  |   -1.99       106.32          102
+               2  |    3.38       100.41          102
+               3  |   -4.62        95.12          102
+               4  |    3.38        89.95          102
+               5  |   -4.62        84.78          102
+               6  |    3.38        79.61          102
+               7  |   -4.62        74.43          102
+               8  |    3.38        69.25          102
+               9  |   -4.62        64.09          102
+              10  |    3.38        58.93          102
+              11  |   -4.62        53.75          102
+              12  |    3.38        48.55          102
+              13  |   -4.62        43.41          102
+              14  |    3.38        38.23          102
+              15  |   -4.62        33.08          102
+              16  |    3.38        27.87          102
+              17  |   -4.62        22.73          102
+              18  |    3.38        17.57          102
+              19  |   -4.62        12.39          102
+              20  |    3.38         5.98          102
+              21  |   -4.62        -0.44          102
+              22  |    3.38        -6.85          102
+              23  |   -4.62       -13.29          102
+              24  |    3.38       -18.45          102
+              25  |   -4.62       -23.63          102
+              26  |    3.38       -28.81          102
+              27  |   -4.62       -33.97          102
+              28  |    3.38       -39.12          102
+              29  |   -4.62        -44.3          102
+              30  |    3.38       -49.47          102
+              31  |   -4.62       -54.64          102
+              32  |    3.38       -57.36          102
+
+
+   Please note that the FOV reference and cross angles are defined with half
+   angle values.
+
+   The following FOV definitions correspond to the NAIF Body Names:
+   MPO_SERENA_ELENA_AN_NN, where NN indicates the anode.
+
+   \begindata
+
+      INS-121551_NAME           = 'MPO_SERENA_ELENA_AN_01'
+      INS-121551_BORESIGHT      = ( -1.99  106.32   102 )
+      INS-121551_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121551_FOV_SHAPE      = 'RECTANGLE'
+      INS-121551_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121551_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121551_FOV_REF_ANGLE      = 1
+      INS-121551_FOV_CROSS_ANGLE    = 1
+      INS-121551_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121552_NAME           = 'MPO_SERENA_ELENA_AN_02'
+      INS-121552_BORESIGHT      = (  3.38  100.41   102 )
+      INS-121552_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121552_FOV_SHAPE      = 'RECTANGLE'
+      INS-121552_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121552_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121552_FOV_REF_ANGLE      = 1
+      INS-121552_FOV_CROSS_ANGLE    = 1
+      INS-121552_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121553_NAME           = 'MPO_SERENA_ELENA_AN_03'
+      INS-121553_BORESIGHT      = ( -4.62   95.12   102 )
+      INS-121553_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121553_FOV_SHAPE      = 'RECTANGLE'
+      INS-121553_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121553_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121553_FOV_REF_ANGLE      = 1
+      INS-121553_FOV_CROSS_ANGLE    = 1
+      INS-121553_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121554_NAME           = 'MPO_SERENA_ELENA_AN_04'
+      INS-121554_BORESIGHT      = (  3.38   89.95   102 )
+      INS-121554_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121554_FOV_SHAPE      = 'RECTANGLE'
+      INS-121554_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121554_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121554_FOV_REF_ANGLE      = 1
+      INS-121554_FOV_CROSS_ANGLE    = 1
+      INS-121554_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121555_NAME           = 'MPO_SERENA_ELENA_AN_05'
+      INS-121555_BORESIGHT      = ( -4.62   84.78   102 )
+      INS-121555_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121555_FOV_SHAPE      = 'RECTANGLE'
+      INS-121555_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121555_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121555_FOV_REF_ANGLE      = 1
+      INS-121555_FOV_CROSS_ANGLE    = 1
+      INS-121555_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121556_NAME           = 'MPO_SERENA_ELENA_AN_06'
+      INS-121556_BORESIGHT      = (  3.38   79.61   102 )
+      INS-121556_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121556_FOV_SHAPE      = 'RECTANGLE'
+      INS-121556_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121556_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121556_FOV_REF_ANGLE      = 1
+      INS-121556_FOV_CROSS_ANGLE    = 1
+      INS-121556_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121557_NAME           = 'MPO_SERENA_ELENA_AN_07'
+      INS-121557_BORESIGHT      = ( -4.62   74.43   102 )
+      INS-121557_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121557_FOV_SHAPE      = 'RECTANGLE'
+      INS-121557_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121557_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121557_FOV_REF_ANGLE      = 1
+      INS-121557_FOV_CROSS_ANGLE    = 1
+      INS-121557_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121558_NAME           = 'MPO_SERENA_ELENA_AN_08'
+      INS-121558_BORESIGHT      = (  3.38   69.25   102 )
+      INS-121558_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121558_FOV_SHAPE      = 'RECTANGLE'
+      INS-121558_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121558_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121558_FOV_REF_ANGLE      = 1
+      INS-121558_FOV_CROSS_ANGLE    = 1
+      INS-121558_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121559_NAME           = 'MPO_SERENA_ELENA_AN_09'
+      INS-121559_BORESIGHT      = ( -4.62   64.09   102 )
+      INS-121559_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121559_FOV_SHAPE      = 'RECTANGLE'
+      INS-121559_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121559_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121559_FOV_REF_ANGLE      = 1
+      INS-121559_FOV_CROSS_ANGLE    = 1
+      INS-121559_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121560_NAME           = 'MPO_SERENA_ELENA_AN_10'
+      INS-121560_BORESIGHT      = (  3.38   58.93   102 )
+      INS-121560_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121560_FOV_SHAPE      = 'RECTANGLE'
+      INS-121560_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121560_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121560_FOV_REF_ANGLE      = 1
+      INS-121560_FOV_CROSS_ANGLE    = 1
+      INS-121560_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121561_NAME           = 'MPO_SERENA_ELENA_AN_11'
+      INS-121561_BORESIGHT      = ( -4.62   53.75   102 )
+      INS-121561_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121561_FOV_SHAPE      = 'RECTANGLE'
+      INS-121561_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121561_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121561_FOV_REF_ANGLE      = 1
+      INS-121561_FOV_CROSS_ANGLE    = 1
+      INS-121561_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121562_NAME           = 'MPO_SERENA_ELENA_AN_12'
+      INS-121562_BORESIGHT      = (  3.38   48.55   102 )
+      INS-121562_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121562_FOV_SHAPE      = 'RECTANGLE'
+      INS-121562_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121562_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121562_FOV_REF_ANGLE      = 1
+      INS-121562_FOV_CROSS_ANGLE    = 1
+      INS-121562_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121563_NAME           = 'MPO_SERENA_ELENA_AN_13'
+      INS-121563_BORESIGHT      = ( -4.62   43.41   102 )
+      INS-121563_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121563_FOV_SHAPE      = 'RECTANGLE'
+      INS-121563_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121563_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121563_FOV_REF_ANGLE      = 1
+      INS-121563_FOV_CROSS_ANGLE    = 1
+      INS-121563_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121564_NAME           = 'MPO_SERENA_ELENA_AN_14'
+      INS-121564_BORESIGHT      = (  3.38   38.23   102 )
+      INS-121564_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121564_FOV_SHAPE      = 'RECTANGLE'
+      INS-121564_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121564_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121564_FOV_REF_ANGLE      = 1
+      INS-121564_FOV_CROSS_ANGLE    = 1
+      INS-121564_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121565_NAME           = 'MPO_SERENA_ELENA_AN_15'
+      INS-121565_BORESIGHT      = ( -4.62   33.08   102 )
+      INS-121565_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121565_FOV_SHAPE      = 'RECTANGLE'
+      INS-121565_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121565_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121565_FOV_REF_ANGLE      = 1
+      INS-121565_FOV_CROSS_ANGLE    = 1
+      INS-121565_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121566_NAME           = 'MPO_SERENA_ELENA_AN_16'
+      INS-121566_BORESIGHT      = (  3.38   27.87   102 )
+      INS-121566_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121566_FOV_SHAPE      = 'RECTANGLE'
+      INS-121566_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121566_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121566_FOV_REF_ANGLE      = 1
+      INS-121566_FOV_CROSS_ANGLE    = 1
+      INS-121566_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121567_NAME           = 'MPO_SERENA_ELENA_AN_17'
+      INS-121567_BORESIGHT      = ( -4.62   22.73   102 )
+      INS-121567_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121567_FOV_SHAPE      = 'RECTANGLE'
+      INS-121567_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121567_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121567_FOV_REF_ANGLE      = 1
+      INS-121567_FOV_CROSS_ANGLE    = 1
+      INS-121567_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121568_NAME           = 'MPO_SERENA_ELENA_AN_18'
+      INS-121568_BORESIGHT      = (  3.38   17.57   102 )
+      INS-121568_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121568_FOV_SHAPE      = 'RECTANGLE'
+      INS-121568_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121568_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121568_FOV_REF_ANGLE      = 1
+      INS-121568_FOV_CROSS_ANGLE    = 1
+      INS-121568_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121569_NAME           = 'MPO_SERENA_ELENA_AN_19'
+      INS-121569_BORESIGHT      = ( -4.62   12.39   102 )
+      INS-121569_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121569_FOV_SHAPE      = 'RECTANGLE'
+      INS-121569_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121569_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121569_FOV_REF_ANGLE      = 1
+      INS-121569_FOV_CROSS_ANGLE    = 1
+      INS-121569_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121570_NAME           = 'MPO_SERENA_ELENA_AN_20'
+      INS-121570_BORESIGHT      = (  3.38    5.98   102 )
+      INS-121570_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121570_FOV_SHAPE      = 'RECTANGLE'
+      INS-121570_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121570_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121570_FOV_REF_ANGLE      = 1
+      INS-121570_FOV_CROSS_ANGLE    = 1
+      INS-121570_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121571_NAME           = 'MPO_SERENA_ELENA_AN_21'
+      INS-121571_BORESIGHT      = ( -4.62   -0.44   102 )
+      INS-121571_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121571_FOV_SHAPE      = 'RECTANGLE'
+      INS-121571_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121571_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121571_FOV_REF_ANGLE      = 1
+      INS-121571_FOV_CROSS_ANGLE    = 1
+      INS-121571_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121572_NAME           = 'MPO_SERENA_ELENA_AN_22'
+      INS-121572_BORESIGHT      = (  3.38   -6.85   102 )
+      INS-121572_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121572_FOV_SHAPE      = 'RECTANGLE'
+      INS-121572_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121572_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121572_FOV_REF_ANGLE      = 1
+      INS-121572_FOV_CROSS_ANGLE    = 1
+      INS-121572_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121573_NAME           = 'MPO_SERENA_ELENA_AN_23'
+      INS-121573_BORESIGHT      = ( -4.62  -13.29   102 )
+      INS-121573_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121573_FOV_SHAPE      = 'RECTANGLE'
+      INS-121573_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121573_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121573_FOV_REF_ANGLE      = 1
+      INS-121573_FOV_CROSS_ANGLE    = 1
+      INS-121573_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121574_NAME           = 'MPO_SERENA_ELENA_AN_24'
+      INS-121574_BORESIGHT      = (  3.38  -18.45   102 )
+      INS-121574_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121574_FOV_SHAPE      = 'RECTANGLE'
+      INS-121574_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121574_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121574_FOV_REF_ANGLE      = 1
+      INS-121574_FOV_CROSS_ANGLE    = 1
+      INS-121574_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121575_NAME           = 'MPO_SERENA_ELENA_AN_25'
+      INS-121575_BORESIGHT      = ( -4.62  -23.63   102 )
+      INS-121575_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121575_FOV_SHAPE      = 'RECTANGLE'
+      INS-121575_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121575_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121575_FOV_REF_ANGLE      = 1
+      INS-121575_FOV_CROSS_ANGLE    = 1
+      INS-121575_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121576_NAME           = 'MPO_SERENA_ELENA_AN_26'
+      INS-121576_BORESIGHT      = (  3.38  -28.81   102 )
+      INS-121576_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121576_FOV_SHAPE      = 'RECTANGLE'
+      INS-121576_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121576_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121576_FOV_REF_ANGLE      = 1
+      INS-121576_FOV_CROSS_ANGLE    = 1
+      INS-121576_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121577_NAME           = 'MPO_SERENA_ELENA_AN_27'
+      INS-121577_BORESIGHT      = ( -4.62  -33.97   102 )
+      INS-121577_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121577_FOV_SHAPE      = 'RECTANGLE'
+      INS-121577_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121577_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121577_FOV_REF_ANGLE      = 1
+      INS-121577_FOV_CROSS_ANGLE    = 1
+      INS-121577_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121578_NAME           = 'MPO_SERENA_ELENA_AN_28'
+      INS-121578_BORESIGHT      = (  3.38  -39.12   102 )
+      INS-121578_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121578_FOV_SHAPE      = 'RECTANGLE'
+      INS-121578_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121578_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121578_FOV_REF_ANGLE      = 1
+      INS-121578_FOV_CROSS_ANGLE    = 1
+      INS-121578_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121579_NAME           = 'MPO_SERENA_ELENA_AN_29'
+      INS-121579_BORESIGHT      = ( -4.62   -44.3   102 )
+      INS-121579_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121579_FOV_SHAPE      = 'RECTANGLE'
+      INS-121579_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121579_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121579_FOV_REF_ANGLE      = 1
+      INS-121579_FOV_CROSS_ANGLE    = 1
+      INS-121579_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121580_NAME           = 'MPO_SERENA_ELENA_AN_30'
+      INS-121580_BORESIGHT      = (  3.38  -49.47   102 )
+      INS-121580_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121580_FOV_SHAPE      = 'RECTANGLE'
+      INS-121580_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121580_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121580_FOV_REF_ANGLE      = 1
+      INS-121580_FOV_CROSS_ANGLE    = 1
+      INS-121580_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121581_NAME           = 'MPO_SERENA_ELENA_AN_31'
+      INS-121581_BORESIGHT      = ( -4.62  -54.64   102 )
+      INS-121581_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121581_FOV_SHAPE      = 'RECTANGLE'
+      INS-121581_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121581_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121581_FOV_REF_ANGLE      = 1
+      INS-121581_FOV_CROSS_ANGLE    = 1
+      INS-121581_FOV_ANGLE_UNITS    = 'DEGREES'
+
+      INS-121582_NAME           = 'MPO_SERENA_ELENA_AN_32'
+      INS-121582_BORESIGHT      = (  3.38  -57.36   102 )
+      INS-121582_FOV_FRAME      = 'MPO_SERENA_ELENA'
+      INS-121582_FOV_SHAPE      = 'RECTANGLE'
+      INS-121582_FOV_CLASS_SPEC = 'ANGLES'
+      INS-121582_FOV_REF_VECTOR = ( 1 0 0 )
+      INS-121582_FOV_REF_ANGLE      = 1
+      INS-121582_FOV_CROSS_ANGLE    = 1
+      INS-121582_FOV_ANGLE_UNITS    = 'DEGREES'
+
+   \begintext
+
+
+   SERENA MIPA FOV:
+   ~~~~~~~~~~~~~~~~~
+
+   The MIPA unit is located behind the radiator in the -X panel, below PICAM 
+   unit. MIPA FOV is a half sphere pointing along the -X axis. Its FOV is 
+   partially obstructed by SERENA MIPA, the MGA and the magnetometer boom.
+
+   Please note that the FOV reference and cross angles are defined with half 
+   angle values. 
+   
+   The following FOV definition corresponds to the NAIF Body Name: 
+   MPO_SERENA_MIPA.
+
+   \begindata
+
+      INS-121520_NAME                    = 'MPO_SERENA_MIPA'
+      INS-121520_BORESIGHT               = ( 0.000,  0.000,  1.000 )
+      INS-121520_FOV_FRAME               = 'MPO_SERENA_MIPA'
+      INS-121520_FOV_SHAPE               = 'CIRCLE'
+      INS-121520_FOV_CLASS_SPEC          = 'ANGLES'
+      INS-121520_FOV_REF_VECTOR          = ( 1.000,  0.000,  0.000 )
+      INS-121520_FOV_REF_ANGLE           = ( 90.0 )
+      INS-121520_FOV_ANGLE_UNITS         = 'DEGREES'
+
+   \begintext
+
+
+   SERENA PICAM FOV:
+   ~~~~~~~~~~~~~~~~~
+
+   The PICAM unit is located behind the radiator in the -X panel and its FOV
+   is nearly a half sphere (simplified to 35 degrees half angle cone),
+   pointing along the -X axis.
+
+   Please note that the FOV reference and cross angles are defined with half 
+   angle values. 
+   
+   The following FOV definition corresponds to the NAIF Body Name: 
+   MPO_SERENA_PICAM.
+
+   \begindata
+
+      INS-121530_NAME             = 'MPO_SERENA_PICAM'
+      INS-121530_BORESIGHT        = ( 0.000,  0.000,  1.000 )
+      INS-121530_FOV_FRAME        = 'MPO_SERENA_PICAM'
+      INS-121530_FOV_SHAPE        = 'CIRCLE'
+      INS-121530_FOV_CLASS_SPEC   = 'ANGLES'
+      INS-121530_FOV_REF_VECTOR   = ( 1.000,  0.000,  0.000 )
+      INS-121530_FOV_REF_ANGLE    = ( 70.0 )
+      INS-121530_FOV_ANGLE_UNITS  = 'DEGREES'
+
+   \begintext
+
+   A set of three additional could FOVs are defined in order to incorporate
+   three 30 degrees sectors of the complete FOV.
+
+   The first additional FOV would be conical with its boresight aligned to the
+   hemispherical FOV, but with a half-angle of 30 deg.
+
+   The following FOV definition would corresponds to the NAIF Body Name:
+   MPO_SERENA_PICAM_00_30. This FOV is not implemented but is provided
+   for information:
+
+
+      INS-121531_NAME             = 'MPO_SERENA_PICAM_00_30'
+      INS-121531_BORESIGHT        = ( 0.000,  0.000,  1.000 )
+      INS-121531_FOV_FRAME        = 'MPO_SERENA_PICAM'
+      INS-121531_FOV_SHAPE        = 'CIRCLE'
+      INS-121531_FOV_CLASS_SPEC   = 'ANGLES'
+      INS-121531_FOV_REF_VECTOR   = ( 1.000,  0.000,  0.000 )
+      INS-121531_FOV_REF_ANGLE    = ( 30.0 )
+      INS-121531_FOV_ANGLE_UNITS  = 'DEGREES'
+
+
+   In addition two ``ring shaped'' FOV could be defined to have their axis
+   aligned with the previous FOV definition, but covering the half angle
+   ranges from 30 to 60 deg and from 60 to 90 deg respectively. These
+   FOVs could be implemented as Polygonal FOV and have a given resolution
+   provided by the number of pair of points defined by the number of
+   steps for the AZ angle of the following figure:
+
+
+                                              +Ypicam
+                +Zpicam                          ^
+                   ^                             |
+                   |       P1i     P2i       _.-"|"-./ P2i
+    ________       |        x______x       .'    |  / `.
+    '.      \      |''..   /     .'       /    .-|-/P1i \  AZi
+      '.     \     |    ''.. EL2'        |    /  |/ \    |
+        '.    \    | EL1/   '.'          |   |   o----------> +Xpicam
+          '.   \   |.  /   .'            |    \     /    |
+            '.  \  | '/  .'               \    `-.-'    /
+              '. \ | / .'                  `._       _.'
+                '.\|/.'                       `-...-'
+         ----------------------
+
+
+   According to the Figure the pair of points is defined by:
+
+      P1N = [  sin(EL1)*cos(AZi)   sin(EL1)*sin(AZi)   cos(EL1) ]
+      P2N = [  sin(EL2)*cos(AZi)   sin(EL2)*sin(AZi)   cos(EL2) ]
+
+   where EL1 is 30 or 60 degrees and EL2 is 60 or 90 degrees respectively.
+   AZ ranges from 0 to 360 degrees and i = 50.
+
+   The following FOV definitions would correspond to the NAIF Body Names:
+   MPO_SERENA_PICAM_30_60 and MPO_SERENA_PICAM_60_90. These FOVs are not
+   implemented but are provided for information:
+
+
+      INS-121532_NAME                 = 'MPO_SERENA_PICAM_30_60'
+      INS-121532_BORESIGHT            = ( 0.000  0.0000  1.000 )
+      INS-121532_FOV_FRAME            = 'MPO_SERENA_PICAM'
+      INS-121532_FOV_SHAPE            = 'POLYGON'
+      INS-121532_FOV_CLASS_SPEC       = 'CORNERS'
+      INS-121532_FOV_BOUNDARY_CORNERS = (
+                      +0.500000000000      +0.000000000000      +0.866025403784
+                      +0.495895006912      +0.063938580842      +0.866025403784
+                      +0.483647431520      +0.126827291955      +0.866025403784
+                      +0.463458378673      +0.187633502440      +0.866025403784
+                      +0.435659352062      +0.245358776002      +0.866025403784
+                      +0.400706810934      +0.299055265246      +0.866025403784
+                      +0.359174675049      +0.347841275302      +0.866025403784
+                      +0.311744900929      +0.390915741234      +0.866025403784
+                      +0.259196284155      +0.427571381503      +0.866025403784
+                      +0.202391671561      +0.457206311508      +0.866025403784
+                      +0.142263793316      +0.479333926518      +0.866025403784
+                      +0.079799947517      +0.493590891707      +0.866025403784
+                      +0.016025788786      +0.499743108100      +0.866025403784
+                      -0.048011512954      +0.497689556475      +0.866025403784
+                      -0.111260466978      +0.487463956091      +0.866025403784
+                      -0.172682527211      +0.469234211025      +0.866025403784
+                      -0.231269145120      +0.443299653186      +0.866025403784
+                      -0.286058330061      +0.410086127298      +0.866025403784
+                      -0.336150445131      +0.370138998538      +0.866025403784
+                      -0.380722979185      +0.324114197654      +0.866025403784
+                      -0.419044052446      +0.272767450605      +0.866025403784
+                      -0.450484433951      +0.216941869559      +0.866025403784
+                      -0.474527873505      +0.157554109012      +0.866025403784
+                      -0.490779578496      +0.095579314351      +0.866025403784
+                      -0.498972696375      +0.032035109990      +0.866025403784
+                      -0.498972696375      -0.032035109990      +0.866025403784
+                      -0.490779578496      -0.095579314351      +0.866025403784
+                      -0.474527873505      -0.157554109012      +0.866025403784
+                      -0.450484433951      -0.216941869559      +0.866025403784
+                      -0.419044052446      -0.272767450605      +0.866025403784
+                      -0.380722979185      -0.324114197654      +0.866025403784
+                      -0.336150445131      -0.370138998538      +0.866025403784
+                      -0.286058330061      -0.410086127298      +0.866025403784
+                      -0.231269145120      -0.443299653186      +0.866025403784
+                      -0.172682527211      -0.469234211025      +0.866025403784
+                      -0.111260466978      -0.487463956091      +0.866025403784
+                      -0.048011512954      -0.497689556475      +0.866025403784
+                      +0.016025788786      -0.499743108100      +0.866025403784
+                      +0.079799947517      -0.493590891707      +0.866025403784
+                      +0.142263793316      -0.479333926518      +0.866025403784
+                      +0.202391671561      -0.457206311508      +0.866025403784
+                      +0.259196284155      -0.427571381503      +0.866025403784
+                      +0.311744900929      -0.390915741234      +0.866025403784
+                      +0.359174675049      -0.347841275302      +0.866025403784
+                      +0.400706810934      -0.299055265246      +0.866025403784
+                      +0.435659352062      -0.245358776002      +0.866025403784
+                      +0.463458378673      -0.187633502440      +0.866025403784
+                      +0.483647431520      -0.126827291955      +0.866025403784
+                      +0.495895006912      -0.063938580842      +0.866025403784
+                      +0.500000000000      -0.000000000000      +0.866025403784
+                      +0.866025403784      +0.000000000000      +0.500000000000
+                      +0.858915347191      +0.110744870583      +0.500000000000
+                      +0.837701924342      +0.219671313452      +0.500000000000
+                      +0.802733459055      +0.324990759428      +0.500000000000
+                      +0.754584132563      +0.424973866118      +0.500000000000
+                      +0.694044555477      +0.517978913676      +0.500000000000
+                      +0.622108785977      +0.602478761792      +0.500000000000
+                      +0.539958007410      +0.677085925296      +0.500000000000
+                      +0.448941133290      +0.740575356625      +0.500000000000
+                      +0.350552658173      +0.791904561073      +0.500000000000
+                      +0.246408118100      +0.830230714521      +0.500000000000
+                      +0.138217563540      +0.854924502590      +0.500000000000
+                      +0.027757480408      +0.865580453962      +0.500000000000
+                      -0.083158379784      +0.862023598210      +0.500000000000
+                      -0.192708781680      +0.844312338808      +0.500000000000
+                      -0.299094910708      +0.812737494145      +0.500000000000
+                      -0.400569909572      +0.767817522297      +0.500000000000
+                      -0.495467561594      +0.710290007960      +0.500000000000
+                      -0.582229649953      +0.641099551330      +0.500000000000
+                      -0.659431543557      +0.561382257791      +0.500000000000
+                      -0.725805589446      +0.472447083099      +0.500000000000
+                      -0.780261927622      +0.375754340365      +0.500000000000
+                      -0.821906386519      +0.272891721750      +0.500000000000
+                      -0.850055165272      +0.165548228608      +0.500000000000
+                      -0.864246061711      +0.055486438129      +0.500000000000
+                      -0.864246061711      -0.055486438129      +0.500000000000
+                      -0.850055165272      -0.165548228608      +0.500000000000
+                      -0.821906386519      -0.272891721750      +0.500000000000
+                      -0.780261927622      -0.375754340365      +0.500000000000
+                      -0.725805589446      -0.472447083099      +0.500000000000
+                      -0.659431543557      -0.561382257791      +0.500000000000
+                      -0.582229649953      -0.641099551330      +0.500000000000
+                      -0.495467561594      -0.710290007960      +0.500000000000
+                      -0.400569909572      -0.767817522297      +0.500000000000
+                      -0.299094910708      -0.812737494145      +0.500000000000
+                      -0.192708781680      -0.844312338808      +0.500000000000
+                      -0.083158379784      -0.862023598210      +0.500000000000
+                      +0.027757480408      -0.865580453962      +0.500000000000
+                      +0.138217563540      -0.854924502590      +0.500000000000
+                      +0.246408118100      -0.830230714521      +0.500000000000
+                      +0.350552658173      -0.791904561073      +0.500000000000
+                      +0.448941133290      -0.740575356625      +0.500000000000
+                      +0.539958007410      -0.677085925296      +0.500000000000
+                      +0.622108785977      -0.602478761792      +0.500000000000
+                      +0.694044555477      -0.517978913676      +0.500000000000
+                      +0.754584132563      -0.424973866118      +0.500000000000
+                      +0.802733459055      -0.324990759428      +0.500000000000
+                      +0.837701924342      -0.219671313452      +0.500000000000
+                      +0.858915347191      -0.110744870583      +0.500000000000
+                      +0.866025403784      -0.000000000000      +0.500000000000
+                                        )
+
+      INS-121533_NAME                 = 'MPO_SERENA_PICAM_60_90'
+      INS-121533_BORESIGHT            = ( 0.000  0.0000  1.000 )
+      INS-121533_FOV_FRAME            = 'MPO_SERENA_PICAM'
+      INS-121533_FOV_SHAPE            = 'POLYGON'
+      INS-121533_FOV_CLASS_SPEC       = 'CORNERS'
+      INS-121533_FOV_BOUNDARY_CORNERS = (
+                      +0.866025403784      +0.000000000000      +0.500000000000
+                      +0.858915347191      +0.110744870583      +0.500000000000
+                      +0.837701924342      +0.219671313452      +0.500000000000
+                      +0.802733459055      +0.324990759428      +0.500000000000
+                      +0.754584132563      +0.424973866118      +0.500000000000
+                      +0.694044555477      +0.517978913676      +0.500000000000
+                      +0.622108785977      +0.602478761792      +0.500000000000
+                      +0.539958007410      +0.677085925296      +0.500000000000
+                      +0.448941133290      +0.740575356625      +0.500000000000
+                      +0.350552658173      +0.791904561073      +0.500000000000
+                      +0.246408118100      +0.830230714521      +0.500000000000
+                      +0.138217563540      +0.854924502590      +0.500000000000
+                      +0.027757480408      +0.865580453962      +0.500000000000
+                      -0.083158379784      +0.862023598210      +0.500000000000
+                      -0.192708781680      +0.844312338808      +0.500000000000
+                      -0.299094910708      +0.812737494145      +0.500000000000
+                      -0.400569909572      +0.767817522297      +0.500000000000
+                      -0.495467561594      +0.710290007960      +0.500000000000
+                      -0.582229649953      +0.641099551330      +0.500000000000
+                      -0.659431543557      +0.561382257791      +0.500000000000
+                      -0.725805589446      +0.472447083099      +0.500000000000
+                      -0.780261927622      +0.375754340365      +0.500000000000
+                      -0.821906386519      +0.272891721750      +0.500000000000
+                      -0.850055165272      +0.165548228608      +0.500000000000
+                      -0.864246061711      +0.055486438129      +0.500000000000
+                      -0.864246061711      -0.055486438129      +0.500000000000
+                      -0.850055165272      -0.165548228608      +0.500000000000
+                      -0.821906386519      -0.272891721750      +0.500000000000
+                      -0.780261927622      -0.375754340365      +0.500000000000
+                      -0.725805589446      -0.472447083099      +0.500000000000
+                      -0.659431543557      -0.561382257791      +0.500000000000
+                      -0.582229649953      -0.641099551330      +0.500000000000
+                      -0.495467561594      -0.710290007960      +0.500000000000
+                      -0.400569909572      -0.767817522297      +0.500000000000
+                      -0.299094910708      -0.812737494145      +0.500000000000
+                      -0.192708781680      -0.844312338808      +0.500000000000
+                      -0.083158379784      -0.862023598210      +0.500000000000
+                      +0.027757480408      -0.865580453962      +0.500000000000
+                      +0.138217563540      -0.854924502590      +0.500000000000
+                      +0.246408118100      -0.830230714521      +0.500000000000
+                      +0.350552658173      -0.791904561073      +0.500000000000
+                      +0.448941133290      -0.740575356625      +0.500000000000
+                      +0.539958007410      -0.677085925296      +0.500000000000
+                      +0.622108785977      -0.602478761792      +0.500000000000
+                      +0.694044555477      -0.517978913676      +0.500000000000
+                      +0.754584132563      -0.424973866118      +0.500000000000
+                      +0.802733459055      -0.324990759428      +0.500000000000
+                      +0.837701924342      -0.219671313452      +0.500000000000
+                      +0.858915347191      -0.110744870583      +0.500000000000
+                      +0.866025403784      -0.000000000000      +0.500000000000
+                      +1.000000000000      +0.000000000000      +0.000000000000
+                      +0.991790013823      +0.127877161685      +0.000000000000
+                      +0.967294863039      +0.253654583910      +0.000000000000
+                      +0.926916757346      +0.375267004879      +0.000000000000
+                      +0.871318704123      +0.490717552004      +0.000000000000
+                      +0.801413621868      +0.598110530491      +0.000000000000
+                      +0.718349350098      +0.695682550603      +0.000000000000
+                      +0.623489801859      +0.781831482468      +0.000000000000
+                      +0.518392568311      +0.855142763005      +0.000000000000
+                      +0.404783343122      +0.914412623016      +0.000000000000
+                      +0.284527586631      +0.958667853037      +0.000000000000
+                      +0.159599895033      +0.987181783414      +0.000000000000
+                      +0.032051577572      +0.999486216201      +0.000000000000
+                      -0.096023025908      +0.995379112949      +0.000000000000
+                      -0.222520933956      +0.974927912182      +0.000000000000
+                      -0.345365054421      +0.938468422050      +0.000000000000
+                      -0.462538290241      +0.886599306373      +0.000000000000
+                      -0.572116660122      +0.820172254597      +0.000000000000
+                      -0.672300890261      +0.740277997075      +0.000000000000
+                      -0.761445958369      +0.648228395308      +0.000000000000
+                      -0.838088104892      +0.545534901211      +0.000000000000
+                      -0.900968867902      +0.433883739118      +0.000000000000
+                      -0.949055747011      +0.315108218024      +0.000000000000
+                      -0.981559156991      +0.191158628701      +0.000000000000
+                      -0.997945392750      +0.064070219981      +0.000000000000
+                      -0.997945392750      -0.064070219981      +0.000000000000
+                      -0.981559156991      -0.191158628701      +0.000000000000
+                      -0.949055747011      -0.315108218024      +0.000000000000
+                      -0.900968867902      -0.433883739118      +0.000000000000
+                      -0.838088104892      -0.545534901211      +0.000000000000
+                      -0.761445958369      -0.648228395308      +0.000000000000
+                      -0.672300890261      -0.740277997075      +0.000000000000
+                      -0.572116660122      -0.820172254597      +0.000000000000
+                      -0.462538290241      -0.886599306373      +0.000000000000
+                      -0.345365054421      -0.938468422050      +0.000000000000
+                      -0.222520933956      -0.974927912182      +0.000000000000
+                      -0.096023025908      -0.995379112949      +0.000000000000
+                      +0.032051577572      -0.999486216201      +0.000000000000
+                      +0.159599895033      -0.987181783414      +0.000000000000
+                      +0.284527586631      -0.958667853037      +0.000000000000
+                      +0.404783343122      -0.914412623016      +0.000000000000
+                      +0.518392568311      -0.855142763005      +0.000000000000
+                      +0.623489801859      -0.781831482468      +0.000000000000
+                      +0.718349350098      -0.695682550603      +0.000000000000
+                      +0.801413621868      -0.598110530491      +0.000000000000
+                      +0.871318704123      -0.490717552004      +0.000000000000
+                      +0.926916757346      -0.375267004879      +0.000000000000
+                      +0.967294863039      -0.253654583910      +0.000000000000
+                      +0.991790013823      -0.127877161685      +0.000000000000
+                      +1.000000000000      -0.000000000000      +0.000000000000
+                                            )
+
+
+   SERENA STROFIO FOV:
+   ~~~~~~~~~~~~~~~~~~~
+
+   The STROFIO unit is located in +X panel. STROFIO has two baffles, one 
+   pointing along the X-axis and other along the -X axis, both have a FOV of 
+   10 degrees half cone.
+   
+   Please note that the FOV reference and cross angles are defined with half 
+   angle values. 
+   
+   The following FOV definition corresponds to the NAIF Body Names: 
+   MPO_SERENA_STROFIO+X, MPO_SERENA_STROFIO-X, MPO_SERENA_STROFIO.
+
+
+   \begindata
+
+      INS-121541_FOV_FRAME                 = 'MPO_SERENA_STROFIO+X'
+      INS-121541_FOV_SHAPE                 = 'CIRCLE'
+      INS-121541_BORESIGHT                 = ( 0.000,  0.000,  1.000 )
+      INS-121541_FOV_CLASS_SPEC            = 'ANGLES'
+      INS-121541_FOV_REF_VECTOR            = ( 1.000,  0.000,  0.000 )
+      INS-121541_FOV_REF_ANGLE             = ( 10.0 )
+      INS-121541_FOV_ANGLE_UNITS           = 'DEGREES'
+
+      INS-121542_FOV_FRAME                 = 'MPO_SERENA_STROFIO-X'
+      INS-121542_FOV_SHAPE                 = 'CIRCLE'
+      INS-121542_BORESIGHT                 = ( 0.000,  0.000,  1.000 )
+      INS-121542_FOV_CLASS_SPEC            = 'ANGLES'
+      INS-121542_FOV_REF_VECTOR            = ( 1.000,  0.000,  0.000 )
+      INS-121542_FOV_REF_ANGLE             = ( 10.0 )
+      INS-121542_FOV_ANGLE_UNITS           = 'DEGREES'
+
+      INS-121543_FOV_FRAME                 = 'MPO_SERENA_STROFIO'
+      INS-121543_FOV_SHAPE                 = 'CIRCLE'
+      INS-121543_BORESIGHT                 = ( 0.000,  0.000,  1.000 )
+      INS-121543_FOV_CLASS_SPEC            = 'ANGLES'
+      INS-121543_FOV_REF_VECTOR            = ( 1.000,  0.000,  0.000 )
+      INS-121543_FOV_REF_ANGLE             = ( 10.0 )
+      INS-121543_FOV_ANGLE_UNITS           = 'DEGREES'
+
+   \begintext
+
+
+Optical Parameters
+-----------------------------------------------------------------------------
+
+   [TBW]
+
+
+Detector Parameters
+-----------------------------------------------------------------------------
+   
+   [TBW]
+
+
+Platform ID
+-----------------------------------------------------------------------------
+
+    This number is the NAIF instrument ID of the platform on which
+    the channels are mounted. For all channels this platform is
+    the spacecraft.
+
+   \begindata
+
+      INS-121710_PLATFORM_ID = ( -121000 )
+
+   \begintext
+
+
+MPO SERENA NAIF ID Codes -- Definitions
+==============================================================================
+
+   This section contains name to NAIF ID mappings for the SERENA instrument
+   of the BepiColombo MPO mission. Once the contents of this file is loaded
+   into the KERNEL POOL, these mappings become available within SPICE, making
+   it possible to use names instead of ID code in the high level SPICE routine
+   calls.
+
+   This table presents the Search for Exospheric Refilling and Emitted Natural
+   Abundances (SERENA) instrument and sensor names and IDs:
+
+      Name                       ID           Synonyms
+      -------------------------  -----------  -----------------------
+      MPO_SERENA_ELENA            -121510
+      MPO_SERENA_MIPA             -121520
+      MPO_SERENA_PICAM            -121530
+      MPO_SERENA_PICAM_00_30      -121531
+      MPO_SERENA_PICAM_30_60      -121532
+      MPO_SERENA_PICAM_60_90      -121533
+      MPO_SERENA_STROFIO          -121540
+      MPO_SERENA_STROFIO+X        -121541
+      MPO_SERENA_STROFIO-X        -121542
+      MPO_SERENA_ELENA_AN_NN*     -1215NN*
+
+         * There are NNN NAIF ID codes for the MPO_SERENA_ELENA_AN elements.
+           NN is the anode number and ranges from 51 to 82.
+
+      DISCLAIMER: Please note that the MPO_SERENA_ELENA_AN_NN* NAIF ID
+      definitions are not included in the MPO Frames Kernel file
+      (bc_mpo_vNN.tf, where NN is the version number of the file).
+
+   The mappings summarized in this table are implemented by the keywords
+   below.
+
+   \begindata
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA'       )
+      NAIF_BODY_CODE   += ( -121510                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_MIPA'        )
+      NAIF_BODY_CODE   += ( -121520                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_PICAM'       )
+      NAIF_BODY_CODE   += ( -121530                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_PICAM_00_30' )
+      NAIF_BODY_CODE   += ( -121531                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_PICAM_30_60' )
+      NAIF_BODY_CODE   += ( -121532                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_PICAM_60_90' )
+      NAIF_BODY_CODE   += ( -121533                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_STROFIO+X'   )
+      NAIF_BODY_CODE   += ( -121541                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_STROFIO-X'   )
+      NAIF_BODY_CODE   += ( -121542                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_STROFIO'     )
+      NAIF_BODY_CODE   += ( -121543                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_01' )
+      NAIF_BODY_CODE   += ( -121551                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_02' )
+      NAIF_BODY_CODE   += ( -121552                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_03' )
+      NAIF_BODY_CODE   += ( -121553                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_04' )
+      NAIF_BODY_CODE   += ( -121554                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_05' )
+      NAIF_BODY_CODE   += ( -121555                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_06' )
+      NAIF_BODY_CODE   += ( -121556                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_07' )
+      NAIF_BODY_CODE   += ( -121557                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_08' )
+      NAIF_BODY_CODE   += ( -121558                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_09' )
+      NAIF_BODY_CODE   += ( -121559                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_10' )
+      NAIF_BODY_CODE   += ( -121560                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_11' )
+      NAIF_BODY_CODE   += ( -121561                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_12' )
+      NAIF_BODY_CODE   += ( -121562                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_13' )
+      NAIF_BODY_CODE   += ( -121563                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_14' )
+      NAIF_BODY_CODE   += ( -121564                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_15' )
+      NAIF_BODY_CODE   += ( -121565                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_16' )
+      NAIF_BODY_CODE   += ( -121566                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_17' )
+      NAIF_BODY_CODE   += ( -121567                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_18' )
+      NAIF_BODY_CODE   += ( -121568                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_19' )
+      NAIF_BODY_CODE   += ( -121569                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_20' )
+      NAIF_BODY_CODE   += ( -121570                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_21' )
+      NAIF_BODY_CODE   += ( -121571                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_22' )
+      NAIF_BODY_CODE   += ( -121572                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_23' )
+      NAIF_BODY_CODE   += ( -121573                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_24' )
+      NAIF_BODY_CODE   += ( -121574                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_25' )
+      NAIF_BODY_CODE   += ( -121575                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_26' )
+      NAIF_BODY_CODE   += ( -121576                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_27' )
+      NAIF_BODY_CODE   += ( -121577                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_28' )
+      NAIF_BODY_CODE   += ( -121578                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_29' )
+      NAIF_BODY_CODE   += ( -121579                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_30' )
+      NAIF_BODY_CODE   += ( -121580                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_31' )
+      NAIF_BODY_CODE   += ( -121581                  )
+
+      NAIF_BODY_NAME   += ( 'MPO_SERENA_ELENA_AN_32' )
+      NAIF_BODY_CODE   += ( -121582                  )
+
+   \begintext
+
+
+End of IK file.
