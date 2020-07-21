@@ -1,1 +1,0 @@
-Readme file for the Venus first swingby lesson.
