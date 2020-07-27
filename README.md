@@ -28,9 +28,7 @@ Videos on the ESA SPICE Service YouTube channel:
 * [Tuesday](https://youtu.be/3EgEbe-_sXI)
 * [Wednesday](https://youtu.be/klsSmQOIiEg)
 
-Videos for direct download:
-* [Tuesday](ftp://spiftp.esac.esa.int/workshops/2020_07_VIRTUAL_BEPICOLOMBO_WORKSHOP/videos/BepiColombo_Virtual_SPICE_Training_Class_first_day.mp4)
-* [Wednesday](ftp://spiftp.esac.esa.int/workshops/2020_07_VIRTUAL_BEPICOLOMBO_WORKSHOP/videos/BepiColombo_Virtual_SPICE_Training_Class_second_day.mp4)
+Videos for direct download: ftp://spiftp.esac.esa.int/workshops/2020_07_VIRTUAL_BEPICOLOMBO_WORKSHOP/videos/
 
 
 ## Workshop Agenda
